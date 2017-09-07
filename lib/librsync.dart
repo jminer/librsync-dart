@@ -23,7 +23,7 @@ const blake2SumSize = 32;
 // (1.47 * 10^-27) ^ 1000000000 = 99.999999+%
 
 
-// By default, the strong sum is not truncated. `strongSumLength` can be set to truncate the strong
+// By default, the strong sum is not truncated. `strongSumSize` can be set to truncate the strong
 // sum.
 Stream<List<int>> calculateSignature(Stream<List<int>> oldFile,
     {int blockSize = 2048, int strongSumSize = null}) async* {

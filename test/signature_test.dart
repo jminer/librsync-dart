@@ -1,0 +1,34 @@
+
+import 'dart:async';
+import 'dart:typed_data';
+
+import "package:librsync/librsync.dart";
+
+import 'package:convert/convert.dart' as convert;
+import "package:test/test.dart";
+import 'package:typed_data/typed_buffers.dart';
+
+final everyTwoRegex = new RegExp(r".{2}");
+String hexEncode(List<int> input) {
+  return convert.hex.encode(input).replaceAllMapped(everyTwoRegex, (match) => match.group(0) + " ");
+}
+
+main() {
+  test("Small signature", () async {
+    final oldFile = new Uint8List(7);
+    oldFile.setAll(0, [
+      // "Red car"
+      0x52, 0x65, 0x64, 0x20, 0x63, 0x61, 0x72
+    ]);
+    final sig = await calculateSignature((() async* { yield oldFile; })(),
+        blockSize: 2, strongSumSize: 8).fold(new Uint8Buffer(), (acc, chunk) => acc..addAll(chunk));
+    final sigStr = hexEncode(sig);
+    expect(sigStr, equals(hexEncode([
+      0x72, 0x73, 0x01, 0x37, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x08, // header
+      0x01, 0x66, 0x00, 0xF5, 0xAF, 0x6B, 0x83, 0x63, 0xC7, 0x6D, 0x47, 0x51, // block 0
+      0x01, 0x45, 0x00, 0xC2, 0x84, 0x10, 0xCD, 0x9D, 0xB3, 0x5F, 0x5F, 0x04, // block 1
+      0x01, 0x84, 0x01, 0x02, 0xE4, 0xCF, 0x4F, 0xC9, 0xCE, 0xB1, 0x3D, 0xB0, // block 2
+      0x00, 0x91, 0x00, 0x91, 0xCE, 0xA4, 0x07, 0xCA, 0x10, 0x6D, 0xCF, 0x64, // block 3
+    ])));
+  });
+}

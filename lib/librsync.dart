@@ -4,6 +4,8 @@ import "dart:math" as math;
 
 import 'rolling_checksum.dart';
 
+import 'package:pointycastle/digests/blake2b.dart';
+
 // librsync's default block size is 2048.
 
 const sigMagicMD4 = 0x72730136;
@@ -32,32 +34,40 @@ Stream<List<int>> calculateSignature(Stream<List<int>> oldFile,
   if(strongSumSize < 1 || strongSumSize > blake2SumSize)
     throw new ArgumentError.value("strongSumSize");
 
-  var headerList = new Uint8List(4 * 3);
-  var headerData = headerList.buffer.asByteData();
+  final headerList = new Uint8List(4 * 3);
+  final headerData = headerList.buffer.asByteData();
   headerData.setUint32(0, sigMagicBlake2);
   headerData.setUint32(4, blockSize);
   headerData.setUint32(8, strongSumSize);
   yield headerList;
 
-  var signatureList = new Uint8List(4 + strongSumSize);
-  var signatureData = signatureList.buffer.asByteData();
-  var rollingChecksum = new RollingChecksum();
+  final signatureList = new Uint8List(4 + strongSumSize);
+  final signatureData = signatureList.buffer.asByteData();
+  final rollingChecksum = new RollingChecksum();
+  // Setting the Blake2b digest size changes the hash, so it has to be 32 for compatibility with
+  // librsync.
+  final hasher = new Blake2bDigest(digestSize: 32);
+  final hash = new Uint8List(hasher.digestSize);
   await for(var bytes in oldFile) {
     for(int i = 0; i < bytes.length; ) {
-      var toAdd = math.min(blockSize - rollingChecksum.count, bytes.length - i);
+      final toAdd = math.min(blockSize - rollingChecksum.count, bytes.length - i);
       rollingChecksum.addAll(bytes, i, i + toAdd);
+      hasher.update(bytes, i, toAdd);
       if(rollingChecksum.count == blockSize) {
         signatureData.setUint32(0, rollingChecksum.get());
-        // Blake2Digest.doFinal(signatureList, 4);
-        yield signatureList;
+        hasher.doFinal(hash, 0);
+        signatureList.setRange(4, 4 + strongSumSize, hash);
+        yield new Uint8List.fromList(signatureList);
         rollingChecksum.reset();
+        hasher.reset();
       }
       i += toAdd;
     }
   }
   if(rollingChecksum.count != 0) {
       signatureData.setUint32(0, rollingChecksum.get());
-      // Blake2Digest.doFinal(signatureList, 4);
+      hasher.doFinal(hash, 0);
+      signatureList.setRange(4, 4 + strongSumSize, hash);
       yield signatureList;
   }
 }

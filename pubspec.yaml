@@ -1,4 +1,10 @@
 name: librsync
 dependencies:
-  pointycastle: ^0.10.0
   args: ^0.13.0
+  convert: ">=1.0.0 <3.0.0"
+  pointycastle:
+    git:
+      url: https://github.com/jminer/pointycastle.git
+      ref: blake2b
+  test: ^0.12.24+2
+  typed_data: ^1.1.4

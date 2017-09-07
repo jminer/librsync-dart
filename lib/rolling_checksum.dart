@@ -59,7 +59,7 @@ class RollingChecksum {
     b &= 0xFFFF;
   }
 
-  get() {
+  int get() {
     return (b << 16) | a;
   }
 }

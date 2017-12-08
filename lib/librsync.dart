@@ -61,7 +61,7 @@ Stream<List<int>> calculateSignature(Stream<List<int>> oldFile,
         signatureList.setRange(4, 4 + strongSumSize, hash);
         yield new Uint8List.fromList(signatureList);
         rollingChecksum.reset();
-        hasher.reset();
+        //hasher.reset(); // doFinal does this
       }
       i += toAdd;
     }

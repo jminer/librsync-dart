@@ -2,9 +2,11 @@ import "dart:async";
 import "dart:typed_data";
 import "dart:math" as math;
 
-import 'rolling_checksum.dart';
-
 import 'package:pointycastle/digests/blake2b.dart';
+
+import "rolling_checksum.dart";
+import "src/delta_generator.dart";
+import "src/signature_lookup.dart";
 
 // librsync's default block size is 2048.
 
@@ -72,10 +74,27 @@ Stream<List<int>> calculateSignature(Stream<List<int>> oldFile,
   }
 }
 
-Stream<List<int>> calculateDelta(Stream<List<int>> newFile, Stream<List<int>> sigFile) {
-//
+// `bufferBlockCount` is the size of the buffer that is processed at once, in multiples of the
+// block size. It usually does not need changed.
+Stream<List<int>> calculateDelta(Stream<List<int>> newFile, Stream<List<int>> sigFile,
+    [int bufferBlockCount = 10]) async* {
+  if(bufferBlockCount < 2)
+    throw new ArgumentError.value(bufferBlockCount, "bufferBlockCount"); // TODO: try
+  final sig = await SignatureLookup.load(sigFile);
+  final maxBufferSize = sig.blockSize * bufferBlockCount;
+  final gen = new DeltaGenerator(sig, sig.blockSize);
+  await for(var chunk in newFile) {
+      for(var chunkIndex = 0; chunkIndex < chunk.length; ) {
+        final toCopy = math.min(maxBufferSize - gen.buffer.length, chunk.length - chunkIndex);
+        gen.buffer.addAll(chunk, chunkIndex, chunkIndex + toCopy);
+        chunkIndex += toCopy;
+        if(gen.buffer.length == maxBufferSize)
+          yield gen.processBuffer(false);
+      }
+  }
+  yield gen.processBuffer(true);
 }
 
-Stream<List<int>> applyDelta(Stream<List<int>> oldFile, Stream<List<int>> deltaFile) {
+Stream<List<int>> applyDelta(Stream<List<int>> oldFile, Stream<List<int>> deltaFile) async* {
 //
 }

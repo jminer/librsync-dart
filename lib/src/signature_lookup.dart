@@ -86,6 +86,8 @@ class SignatureLookup {
         }
       }
     }
+    if(fileBufferFilled > 0)
+      throw new FormatException("truncated entry");
     return sig;
   }
 

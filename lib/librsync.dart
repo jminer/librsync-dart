@@ -195,7 +195,7 @@ Stream<List<int>> applyDelta(SeekStreamFactory oldFile, Stream<List<int>> deltaF
             madeProgress = true;
           }
         } else if(state == _ParseState.Commands) {
-          if(literalCount > 0) {
+          if(literalCount > 0 && fileBufferEnd - fileBufferStart > 0) {
             final toYield = math.min(literalCount, fileBufferEnd - fileBufferStart);
             yield fileBuffer.sublist(fileBufferStart, fileBufferStart + toYield);
             fileBufferStart += toYield;

@@ -36,12 +36,12 @@ class SignatureLookup {
     var state = ParseState.Header;
     var entrySize = null;
     var blockIndex = 0;
-    await for(var bytes in file) {
-      for(var i = 0; i < bytes.length; ) {
-        final toAdd = math.min(bytes.length - i, fileBuffer.length - fileBufferFilled);
-        fileBuffer.setRange(fileBufferFilled, fileBufferFilled + toAdd, bytes, i);
+    await for(var chunk in file) {
+      for(var chunkIndex = 0; chunkIndex < chunk.length; ) {
+        final toAdd = math.min(chunk.length - chunkIndex, fileBuffer.length - fileBufferFilled);
+        fileBuffer.setRange(fileBufferFilled, fileBufferFilled + toAdd, chunk, chunkIndex);
         fileBufferFilled += toAdd;
-        i += toAdd;
+        chunkIndex += toAdd;
 
         while(true) {
           var madeProgress = false;

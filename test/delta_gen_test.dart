@@ -52,4 +52,37 @@ main() {
       0x00, // end of file
     ])));
   });
+
+  test("Applying delta", () async {
+    // This is the same data as the above test.
+    final oldFile = new Uint8List(8);
+    oldFile.setAll(0, [
+      // "car ice "
+      0x63, 0x61, 0x72, 0x20, 0x69, 0x63, 0x65, 0x20
+    ]);
+    final deltaFile = new Uint8List(31);
+    deltaFile.setAll(0, [
+      0x72, 0x73, 0x02, 0x36, // header
+      0x05, 0x6D, 0x75, 0x67, 0x20, 0x6E, // literal cmd "mug n"
+      0x45, 0x04, 0x04, // copy cmd for block 1 "ice "
+      0x04, 0x6A, 0x6F, 0x67, 0x20, // literal cmd "jog "
+      0x45, 0x00, 0x04, // copy cmd for block 0 "car "
+      0x08, 0x74, 0x72, 0x79, 0x20, 0x6C, 0x69, 0x70, 0x20, // literal cmd "try lip "
+      0x00, // end of file
+    ]);
+
+    final newFile =
+        await applyDelta(new ListSeekStreamFactory(oldFile), (() async* { yield deltaFile; })())
+            .fold(new Uint8Buffer(), (acc, chunk) => acc..addAll(chunk));
+    final newFileStr = hexEncode(newFile);
+    expect(newFileStr, equals(hexEncode([
+      // "mug nice jog car try lip "
+      0x6D, 0x75, 0x67, 0x20,
+      0x6E, 0x69, 0x63, 0x65, 0x20, // "nice "
+      0x6A, 0x6F, 0x67, 0x20, // "jog "
+      0x63, 0x61, 0x72, 0x20,
+      0x74, 0x72, 0x79, 0x20, // "try "
+      0x6C, 0x69, 0x70, 0x20
+    ])));
+  });
 }

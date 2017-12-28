@@ -239,8 +239,14 @@ Stream<List<int>> applyDelta(SeekStreamFactory oldFile, Stream<List<int>> deltaF
         if(!madeProgress)
           break;
       }
+
+      // Shift the data that's left in the buffer to the beginning.
+      fileBuffer.setRange(0, fileBufferEnd - fileBufferStart, fileBuffer, fileBufferStart);
+      fileBufferEnd = fileBufferEnd - fileBufferStart;
+      fileBufferStart = 0;
     }
   }
+
   if(!eofFound)
     throw new FormatException("truncated file (no EOF found)");
   if(literalCount > 0)

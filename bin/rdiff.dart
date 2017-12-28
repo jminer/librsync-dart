@@ -48,12 +48,30 @@ main(List<String> args) async {
     }
     var oldFile = rest[0];
     var sigFile = rest[1];
-    await librsync.calculateSignature(new File(oldFile).openRead()).pipe(new File(sigFile).openWrite());
+    await librsync.calculateSignature(new File(oldFile).openRead())
+        .pipe(new File(sigFile).openWrite());
   } else if(results.command.name == "delta") {
     var rest = results.command.rest;
-
+    if(rest.length < 3 || rest.length > 3) {
+      print("Wrong number of arguments");
+      exit(1);
+    }
+    var sigFile = rest[0];
+    var newFile = rest[1];
+    var deltaFile = rest[2];
+    await librsync.calculateDelta(new File(newFile).openRead(), new File(sigFile).openRead())
+        .pipe(new File(deltaFile).openWrite());
   } else if(results.command.name == "patch") {
     var rest = results.command.rest;
-
+    if(rest.length < 3 || rest.length > 3) {
+      print("Wrong number of arguments");
+      exit(1);
+    }
+    var oldFile = rest[0];
+    var deltaFile = rest[1];
+    var newFile = rest[2];
+    await librsync.applyDelta(
+            new librsync.FileSeekStreamFactory(oldFile), new File(deltaFile).openRead())
+        .pipe(new File(newFile).openWrite());
   }
 }

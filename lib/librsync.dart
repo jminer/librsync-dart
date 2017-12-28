@@ -216,7 +216,7 @@ Stream<List<int>> applyDelta(SeekStreamFactory oldFile, Stream<List<int>> deltaF
               literalCount = cmd;
             } else if(cmd >= 65 && cmd <= 68) { // literal
               final lenSize = _sizes[cmd - 65];
-              if(fileBufferEnd - fileBufferStart >= lenSize) {
+              if(fileBufferEnd - fileBufferStart >= 1 + lenSize) { // +1 for cmd
                 eatCmd();
                 literalCount = readUint(lenSize);
               }
@@ -224,7 +224,7 @@ Stream<List<int>> applyDelta(SeekStreamFactory oldFile, Stream<List<int>> deltaF
               final cmdOffset = cmd - 69;
               final startSize = _sizes[cmdOffset ~/ 4];
               final lenSize = _sizes[cmdOffset % 4];
-              if(fileBufferEnd - fileBufferStart >= startSize + lenSize) {
+              if(fileBufferEnd - fileBufferStart >= 1 + startSize + lenSize) { // +1 for cmd
                 eatCmd();
                 final copyStart = readUint(_sizes[cmdOffset ~/ 4]);
                 final copyLen = readUint(_sizes[cmdOffset % 4]);

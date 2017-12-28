@@ -1,5 +1,3 @@
-
-import 'dart:async';
 import 'dart:typed_data';
 
 import "package:librsync/librsync.dart";
